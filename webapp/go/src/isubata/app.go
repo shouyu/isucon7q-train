@@ -32,7 +32,7 @@ const (
 var (
 	db            *sqlx.DB
 	ErrBadReqeust = echo.NewHTTPError(http.StatusBadRequest)
-	dataPath 		= "/data"
+	dataPath 		= "/data/icons"
 )
 
 type Renderer struct {
@@ -739,13 +739,12 @@ func tRange(a, b int64) []int64 {
 }
 
 func saveIcon(name string, data []byte) error {
-	file, err := os.Create("/data/" + name)
+	file, err := os.Create(dataPath + "/" + name)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 	file.Write(([]byte)(data))
-
 	return nil
 }
 
