@@ -686,7 +686,7 @@ func postProfile(c echo.Context) error {
 	name := c.FormValue("display_name")
 
 	if avatarName != "" && len(avatarData) > 0 {
-		saveIcon(avatarName, &avatarData)
+		//saveIcon(avatarName, &avatarData)
 		if name != "" {
 			_, err := db.Exec("UPDATE user SET display_name = ?, avatar_icon = ? WHERE id = ?", name, avatarName, self.ID)
 			if err != nil {
@@ -761,11 +761,11 @@ func saveIcon(name string, data *[]byte) error {
 	}
 
 	file, err := os.Create(dataPath + "/" + name)
+	defer file.Close()
 	if err != nil {
 		return err
 	}
 	file.Write(*data)
-	file.Close()
 	return nil
 }
 
