@@ -673,7 +673,7 @@ func postProfile(c echo.Context) error {
 
 	name := c.FormValue("display_name");
 	if avatarName != "" && len(avatarData) > 0 {
-
+		saveIcon(avatarName, &avatarData)
 		if name != "" {
 			_, err := db.Exec("UPDATE user SET display_name = ?, avatar_icon = ? WHERE id = ?", name, avatarName, self.ID)
 			if err != nil {
@@ -681,7 +681,6 @@ func postProfile(c echo.Context) error {
 			}
 		} else {
 			// 画像はアイコンサーバに保存するように変更
-			saveIcon(avatarName, avatarData)
 			_, err = db.Exec("UPDATE user SET avatar_icon = ? WHERE id = ?", avatarName, self.ID)
 			if err != nil {
 				return err
@@ -740,12 +739,17 @@ func tRange(a, b int64) []int64 {
 	return r
 }
 
-func saveIcon(name string, data []byte) error {
+func saveIcon(name string, data *[]byte) error {
+	_, err := os.Stat(dataPath + "/" + name)
+	if err == nil {
+		return nil
+	}
+
 	file, err := os.Create(dataPath + "/" + name)
 	if err != nil {
 		return err
 	}
-	file.Write(data)
+	file.Write(*data)
 	file.Close()
 	return nil
 }
@@ -770,7 +774,7 @@ func saveIcons(c echo.Context) error {
 		}
 
 		for _, im := range images {
-			saveIcon(im.Name, im.Data)
+			saveIcon(im.Name, &im.Data)
 		}
 	}
 
