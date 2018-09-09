@@ -32,7 +32,7 @@ const (
 var (
 	db            *sqlx.DB
 	ErrBadReqeust = echo.NewHTTPError(http.StatusBadRequest)
-	dataPath 		= "/data/icons"
+	dataPath      = "/data/icons"
 )
 
 type Renderer struct {
@@ -465,14 +465,14 @@ func fetchUnread(c echo.Context) error {
 
 	type Count struct {
 		ChannelId int `db:"channel_id" json:"channel_id"`
-		Unread int `db:"unread" json:"unread"`
+		Unread    int `db:"unread" json:"unread"`
 	}
 
 	channelCount := []Count{}
-	err := db.Select(&channelCount, "select m.channel_id as channel_id, count(1) as unread from message as m " +
-	"left join (select * from haveread where user_id = ?) as h " +
-	"on m.channel_id = h.channel_id where (h.message_id < m.id or h.message_id is null)" +
-	"group by m.channel_id", userID)
+	err := db.Select(&channelCount, "select m.channel_id as channel_id, count(1) as unread from message as m "+
+		"left join (select * from haveread where user_id = ?) as h "+
+		"on m.channel_id = h.channel_id where (h.message_id < m.id or h.message_id is null)"+
+		"group by m.channel_id", userID)
 	if err != nil {
 		return err
 	}
@@ -670,16 +670,26 @@ func postProfile(c echo.Context) error {
 		avatarName = fmt.Sprintf("%x%s", sha1.Sum(avatarData), ext)
 	}
 
+	name := c.FormValue("display_name");
 	if avatarName != "" && len(avatarData) > 0 {
-		// 画像はアイコンサーバに保存するように変更
-		saveIcon(avatarName, avatarData)
-		_, err = db.Exec("UPDATE user SET avatar_icon = ? WHERE id = ?", avatarName, self.ID)
-		if err != nil {
-			return err
+
+		if name != "" {
+			_, err := db.Exec("UPDATE user SET display_name = ?, avatar_icon = ? WHERE id = ?", name, avatarName, self.ID)
+			if err != nil {
+				return err
+			}
+		} else {
+			// 画像はアイコンサーバに保存するように変更
+			saveIcon(avatarName, avatarData)
+			_, err = db.Exec("UPDATE user SET avatar_icon = ? WHERE id = ?", avatarName, self.ID)
+			if err != nil {
+				return err
+			}
 		}
+
 	}
 
-	if name := c.FormValue("display_name"); name != "" {
+	if avatarName == "" && name != "" {
 		_, err := db.Exec("UPDATE user SET display_name = ? WHERE id = ?", name, self.ID)
 		if err != nil {
 			return err
@@ -729,13 +739,13 @@ func tRange(a, b int64) []int64 {
 	return r
 }
 
-func saveIcon(name string, data []byte) error {
+func saveIcon(name string, data *[]byte) error {
 	file, err := os.Create(dataPath + "/" + name)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
-	file.Write(([]byte)(data))
+	file.Write(*data)
+	file.Close()
 	return nil
 }
 
@@ -746,11 +756,9 @@ func saveIcons(c echo.Context) error {
 		os.RemoveAll(dataPath)
 	}
 
-
-
 	os.Mkdir(dataPath, 755)
 
-	for i:= 0; i < 100; i++ {
+	for i := 0; i < 100; i++ {
 		fmt.Println("save image: ", i, "/100")
 
 		images := []Image{}
@@ -761,7 +769,7 @@ func saveIcons(c echo.Context) error {
 		}
 
 		for _, im := range images {
-			saveIcon(im.Name, im.Data)
+			saveIcon(im.Name, &im.Data)
 		}
 	}
 
