@@ -32,6 +32,7 @@ const (
 var (
 	db            *sqlx.DB
 	ErrBadReqeust = echo.NewHTTPError(http.StatusBadRequest)
+	dataPath 		= "/data/icons"
 )
 
 type Renderer struct {
@@ -229,6 +230,12 @@ type ChannelInfo struct {
 	Description string    `db:"description"`
 	UpdatedAt   time.Time `db:"updated_at"`
 	CreatedAt   time.Time `db:"created_at"`
+}
+
+type Image struct {
+	ID   int64  `db:"id"`
+	Name string `db:"name"`
+	Data []byte `db:"data"`
 }
 
 func getChannel(c echo.Context) error {
@@ -674,12 +681,7 @@ func postProfile(c echo.Context) error {
 
 	if avatarName != "" && len(avatarData) > 0 {
 		// 画像はアイコンサーバに保存するように変更
-		_, err := db.Exec("INSERT INTO image (name, data) VALUES (?, ?)", avatarName, avatarData)
-		if err != nil {
-			return err
-		}
-
-
+		saveIcon(avatarName, avatarData)
 		_, err = db.Exec("UPDATE user SET avatar_icon = ? WHERE id = ?", avatarName, self.ID)
 		if err != nil {
 			return err
@@ -736,6 +738,45 @@ func tRange(a, b int64) []int64 {
 	return r
 }
 
+func saveIcon(name string, data []byte) error {
+	file, err := os.Create(dataPath + "/" + name)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	file.Write(([]byte)(data))
+	return nil
+}
+
+func saveIcons(c echo.Context) error {
+
+	_, err := os.Stat(dataPath)
+	if err == nil {
+		os.RemoveAll(dataPath)
+	}
+
+
+
+	os.Mkdir(dataPath, 755)
+
+	for i:= 0; i < 100; i++ {
+		fmt.Println("save image: ", i, "/100")
+
+		images := []Image{}
+		err = db.Select(&images, "SELECT * FROM image WHERE id % 100 = ?", i)
+
+		if err != nil {
+			return err
+		}
+
+		for _, im := range images {
+			saveIcon(im.Name, im.Data)
+		}
+	}
+
+	return nil
+}
+
 func main() {
 	e := echo.New()
 	funcs := template.FuncMap{
@@ -752,6 +793,7 @@ func main() {
 	e.Use(middleware.Static("../public"))
 
 	e.GET("/initialize", getInitialize)
+	e.GET("/saveIcons", saveIcons)
 	e.GET("/", getIndex)
 	e.GET("/register", getRegister)
 	e.POST("/register", postRegister)
