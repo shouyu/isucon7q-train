@@ -124,6 +124,7 @@ type Message struct {
 
 func queryMessages(chanID, lastID int64) ([]Message, error) {
 	msgs := []Message{}
+	// TODO channel_idにindex貼る
 	err := db.Select(&msgs, "SELECT * FROM message WHERE id > ? AND channel_id = ? ORDER BY id DESC LIMIT 100",
 		lastID, chanID)
 	return msgs, err
@@ -240,6 +241,7 @@ func getChannel(c echo.Context) error {
 		return err
 	}
 	channels := []ChannelInfo{}
+	// TODO 全部取ってくるのやめる。
 	err = db.Select(&channels, "SELECT * FROM channel ORDER BY id")
 	if err != nil {
 		return err
@@ -396,6 +398,7 @@ func getMessage(c echo.Context) error {
 		response = append(response, r)
 	}
 
+	// loadしたところまで読んだとしてhavereadに登録
 	if len(messages) > 0 {
 		_, err := db.Exec("INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)"+
 			" VALUES (?, ?, ?, NOW(), NOW())"+
@@ -451,6 +454,7 @@ func fetchUnread(c echo.Context) error {
 
 	resp := []map[string]interface{}{}
 
+	// TODO 一発で取れればいい。
 	for _, chID := range channels {
 		lastID, err := queryHaveRead(userID, chID)
 		if err != nil {
@@ -458,6 +462,8 @@ func fetchUnread(c echo.Context) error {
 		}
 
 		var cnt int64
+
+		// channnel_is +
 		if lastID > 0 {
 			err = db.Get(&cnt,
 				"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
@@ -533,6 +539,7 @@ func getHistory(c echo.Context) error {
 	}
 
 	channels := []ChannelInfo{}
+	// TODO channel全部とるのやめたい。
 	err = db.Select(&channels, "SELECT * FROM channel ORDER BY id")
 	if err != nil {
 		return err
@@ -555,6 +562,9 @@ func getProfile(c echo.Context) error {
 	}
 
 	channels := []ChannelInfo{}
+
+	//　チャンネル一覧取得
+	// TODO:これ使ってる？？？？？いらなそう
 	err = db.Select(&channels, "SELECT * FROM channel ORDER BY id")
 	if err != nil {
 		return err
@@ -586,6 +596,7 @@ func getAddChannel(c echo.Context) error {
 	}
 
 	channels := []ChannelInfo{}
+	// TODO　全部とるのやめたい。
 	err = db.Select(&channels, "SELECT * FROM channel ORDER BY id")
 	if err != nil {
 		return err
@@ -662,10 +673,13 @@ func postProfile(c echo.Context) error {
 	}
 
 	if avatarName != "" && len(avatarData) > 0 {
+		// 画像はアイコンサーバに保存するように変更
 		_, err := db.Exec("INSERT INTO image (name, data) VALUES (?, ?)", avatarName, avatarData)
 		if err != nil {
 			return err
 		}
+
+
 		_, err = db.Exec("UPDATE user SET avatar_icon = ? WHERE id = ?", avatarName, self.ID)
 		if err != nil {
 			return err
@@ -683,6 +697,8 @@ func postProfile(c echo.Context) error {
 }
 
 func getIcon(c echo.Context) error {
+	// TODO: 静的ファイルとして保存してnginxで返す・ファイルの置き場所は要相談
+
 	var name string
 	var data []byte
 	err := db.QueryRow("SELECT name, data FROM image WHERE name = ?",
