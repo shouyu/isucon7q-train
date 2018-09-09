@@ -756,19 +756,25 @@ func saveIcons(c echo.Context) error {
 		os.RemoveAll(dataPath)
 	}
 
-	images := []Image{}
 
-	os.Mkdir("/data", 755)
-	err = db.Select(&images, "SELECT * FROM image")
 
-	if err != nil {
-		return err
+	os.Mkdir(dataPath, 755)
+
+	for i:= 0; i < 100; i++ {
+		fmt.Println("save image: ", i, "/100")
+
+		images := []Image{}
+		err = db.Select(&images, "SELECT * FROM image WHERE id % 100 = ?", i)
+
+		if err != nil {
+			return err
+		}
+
+		for _, im := range images {
+			saveIcon(im.Name, im.Data)
+		}
 	}
 
-	for _, im := range images {
-		saveIcon(im.Name, im.Data)
-		fmt.Println("save image:", im.ID, im.Name)
-	}
 	return nil
 }
 
