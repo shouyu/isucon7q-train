@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
@@ -662,8 +661,23 @@ func postProfile(c echo.Context) error {
 		if err != nil {
 			return err
 		}
-		avatarData, _ = ioutil.ReadAll(file)
-		file.Close()
+
+		buf := make([]byte, 32*1024)
+		avatarData := make([]byte, 0)
+		defer file.Close()
+
+		for {
+			n, err := file.Read(buf)
+			if n > 0 {
+				avatarData = append(avatarData, buf[:n]...)
+			}
+
+			if err == io.EOF {
+				break
+			}
+		}
+
+		//avatarData, _ = ioutil.ReadAll(file)
 
 		if len(avatarData) > avatarMaxBytes {
 			return ErrBadReqeust
