@@ -740,12 +740,12 @@ func tRange(a, b int64) []int64 {
 	return r
 }
 
-func saveIcon(name string, data *[]byte) error {
+func saveIcon(name string, data []byte) error {
 	file, err := os.Create(dataPath + "/" + name)
 	if err != nil {
 		return err
 	}
-	file.Write(*data)
+	file.Write(data)
 	file.Close()
 	return nil
 }
@@ -770,7 +770,7 @@ func saveIcons(c echo.Context) error {
 		}
 
 		for _, im := range images {
-			saveIcon(im.Name, &im.Data)
+			saveIcon(im.Name, im.Data)
 		}
 	}
 
