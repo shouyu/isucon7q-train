@@ -24,6 +24,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/middleware"
+	"runtime"
 )
 
 const (
@@ -695,8 +696,10 @@ func postProfile(c echo.Context) error {
 			return err
 		}
 	}
+	runtime.GC()
 
 	return c.Redirect(http.StatusSeeOther, "/")
+
 }
 
 func getIcon(c echo.Context) error {
@@ -778,6 +781,7 @@ func saveIcons(c echo.Context) error {
 		}
 	}
 
+	runtime.GC()
 	return nil
 }
 
