@@ -1,6 +1,6 @@
 .PHONY: main nginx mysql bench result
 
-main: nginx mysql bench result
+main: bench result
 
 nginx:
 	sudo systemctl reload nginx
@@ -11,7 +11,7 @@ mysql:
 	: > /var/log/mysql/mysql-slow.log
 
 bench:
-	cd bench && ./bin/bench -remotes=127.0.0.1 -result result.json
+	cd bench && ./bin/bench -remotes=54.95.70.255 -output result.json
 
 result:
 	cat /home/isucon/isubata/bench/result.json | jq .score
