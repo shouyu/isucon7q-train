@@ -639,7 +639,6 @@ func postProfile(c echo.Context) error {
 
 	avatarName := ""
 	var avatarData []byte
-
 	if fh, err := c.FormFile("avatar_icon"); err == http.ErrMissingFile {
 		// no file upload
 	} else if err != nil {
@@ -663,9 +662,7 @@ func postProfile(c echo.Context) error {
 		}
 
 		buf := make([]byte, 32*1024)
-		avatarData := make([]byte, 0)
 		defer file.Close()
-
 		for {
 			n, err := file.Read(buf)
 			if n > 0 {
@@ -686,7 +683,8 @@ func postProfile(c echo.Context) error {
 		avatarName = fmt.Sprintf("%x%s", sha1.Sum(avatarData), ext)
 	}
 
-	name := c.FormValue("display_name");
+	name := c.FormValue("display_name")
+
 	if avatarName != "" && len(avatarData) > 0 {
 		saveIcon(avatarName, &avatarData)
 		if name != "" {
